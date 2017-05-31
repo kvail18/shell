@@ -11,7 +11,7 @@ It has the following functionality:
 -run single and multi word command lines via forking and then execing <br>
 -there are the following built in commands:
 <br>
-exit : exits the shell
-myinfo : prints out PID and PPID
-cd : changes current directory to $HOME using getenv() and chdir()
-cd &lt; dir &gt; :changes current directory to specified directory using chdir()
+exit : exits the shell <br>
+myinfo : prints out PID and PPID <br>
+cd : changes current directory to $HOME using getenv() and chdir() <br>
+cd &lt; dir &gt; :changes current directory to specified directory using chdir() <br>
