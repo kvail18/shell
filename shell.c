@@ -10,6 +10,7 @@
 int y=0;
 int background=0;
 
+//function used to change directories back to $HOME
 int goHome(){
 	char cwd[1024];
 	chdir(getenv("HOME"));
@@ -19,6 +20,7 @@ int goHome(){
 }
 
 
+//function used to redirect output into a file
 int redirectRight(char * entry){
 
 	int input=0;
@@ -52,7 +54,8 @@ int redirectRight(char * entry){
 
 
 
-
+//fucntion used to count the number of pipes in a given command
+//seeing as this shell supports single pipe commands
 int pipeCount(char * entry){
 
 	int pipes=0;
@@ -73,6 +76,8 @@ int pipeCount(char * entry){
 	return pipes;
 }
 
+//this function takes in the input given by the user and parses
+//the command into an array of arguments
 char** parseCommand(char* inputLine){
 
 	const int MAX_SIZE = 101;
@@ -100,6 +105,7 @@ char** parseCommand(char* inputLine){
 	return args;
 }
 
+//this function takes in two args and pipes the output of argv1 into argv2 as its input
 void pipes(char ** argv1, char ** argv2){
 
 	int pid;
@@ -147,6 +153,7 @@ void pipes(char ** argv1, char ** argv2){
 
 }
 
+//This function deals with input and output redirection and a pipe in one command
 int pipeArrow(char ** argv){
 
 	int oldIn=dup(0);
@@ -246,12 +253,13 @@ int pipeArrow(char ** argv){
 
 }
 
-
+//this function takes in argv of type char** and uses its elements
+//to call pipes(char ***argv1, char **argv2)
 int pipeOne(char ** argv){
 
 	char * temp=calloc(1025,sizeof(char));
 	char * temp2=calloc(1025,sizeof(char));
-	int used=0;
+	int used=0; //if your single pipe has been encoutered or not
 	int count=0;
 
 	while(argv[count]!='\0'){
@@ -282,7 +290,7 @@ return 0;
 
 }
 
-
+//takes in arguments array and utilizes execvp to run multi word commands
 int multWords(char * argv[]){
 
 	pid_t forker;
@@ -307,6 +315,8 @@ int multWords(char * argv[]){
 	return 0;
 }
 
+
+//redirect takes in a char ** of arguments and deals with redirection of input and output
 void redirect(char ** argv){
 
 	char *temp=calloc(1025,sizeof(char));
@@ -388,6 +398,7 @@ void redirect(char ** argv){
 
 }
 
+//this function utilizes fork and execlp to execute and one word command in a new process.
 int oneWord(char * command){
 
 	pid_t forker;
@@ -405,6 +416,9 @@ int oneWord(char * command){
 	return 0;
 }
 
+
+//this function is called when the user inputs myinfo
+//it prints out the current process's PID and PPID
 void myInfo(){
 
 	pid_t mine;
@@ -417,7 +431,8 @@ void myInfo(){
 
 }
 
-
+//This function deals with signal handling.
+//It ensures the current process will not end when it recieves SIGINT
 void sig_handler(int sig){
 	signal(sig,sig_handler);
 	switch(sig){
@@ -447,8 +462,10 @@ while (1){
 	pid_t childs=1;
 	background=0;
 
+	//main while loop for shell input
 	while( childs >0){
 
+		//deals with background processes
 		childs=waitpid((pid_t)(-1),0,WNOHANG);
 		if (childs==0){
 			if (!y){
@@ -463,7 +480,7 @@ while (1){
 	}
 
 	printf("< fakeShell@clyde >");
-	fgets(entry,1025,stdin);
+	fgets(entry,1025,stdin); //each command must be equal to or less than 1024 chars in length
 	if (entry==NULL){
 		printf("Don't give me a null entry silly!! Shell will be exiting. Bye!\n");
 		break;
@@ -475,6 +492,7 @@ while (1){
 		y=0;
 	}
 
+	//run a process in the background by adding a & to the end of the command
 	if ( strpbrk(entry,"&")!=NULL ){
 		if (entry[strlen(entry)-1]=='\n'){
 			entry[strlen(entry)-1]='\0';
@@ -483,7 +501,7 @@ while (1){
 		background=1;
 	}
 
-
+	//exit the shell
 	if (0== strcmp(entry,"exit\n")){
 		break;
 	}
@@ -491,12 +509,18 @@ while (1){
 	else if ((entry[0]=='\n') && (entry[1]=='\0') ){
 		;
 	}
+
+	//if the user inputs "myinfo"
 	else if (0== strcmp(entry,"myinfo\n")){
 		myInfo();
 	}
+
+	//if the user inputs "cd", call to goHome() function
 	else if (0== strcmp(entry,"cd\n")){
 		goHome();
 	}
+
+	//if the command is to cd into a specific directory
 	else if( (entry[0]=='c') && (entry[1]=='d') && (entry[2]==' ') && (5<=strlen(entry)) ){
 		if (entry[strlen(entry)-1]=='\n'){
 			entry[strlen(entry)-1]='\0';
@@ -513,7 +537,7 @@ while (1){
 	}
 
 
-
+	//if the command contains no redirection or piping
 	else if( ( strpbrk(entry,"<>|&")==NULL ) && (entry[0]!='\0')){
 		if (entry[strlen(entry)-1]=='\n'){
 			entry[strlen(entry)-1]='\0';
@@ -524,6 +548,7 @@ while (1){
 		free(argv);
 	}
 
+	//if the commmand contains I.O. redirection
 	else if( (strpbrk(entry,"<>")!=NULL) && (strpbrk(entry,"|")==NULL)){
 		if (entry[strlen(entry)-1]=='\n'){
 			entry[strlen(entry)-1]='\0';
@@ -535,10 +560,13 @@ while (1){
 		entry[1]='\0';
 	}
 
+	//if your redirection was not done correctly
+	//say for instance you had something like < arg1 arg2
 	else if(redirectRight(entry)==-1){
 		fprintf(stderr,"your pipe and redirection were not done correctly\n");
 	}
 
+	//command ocntains one pipe only
 	else if( (strpbrk(entry,"<>")==NULL) && (pipeCount(entry)==1) ){
 		if (entry[strlen(entry)-1]=='\n'){
 			entry[strlen(entry)-1]='\0';
@@ -548,6 +576,7 @@ while (1){
 		free(argv);
 	}
 
+	//command contains redirection and a pipe
 	else if( (strpbrk(entry,"<>")!=NULL) && (pipeCount(entry)==1) ){
 		if (entry[strlen(entry)-1]=='\n'){
 			entry[strlen(entry)-1]='\0';
@@ -557,6 +586,7 @@ while (1){
 		free(argv);
 	}
 
+	//if the user tries to do multi-piping
 	else if (pipeCount(entry)>1){
 
 		printf("This shell does not support multipipe commands\n");
